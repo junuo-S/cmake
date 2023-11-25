@@ -10,23 +10,23 @@ function(junuo_add_executable)
     add_executable(${ARGV})
 endfunction(junuo_add_executable)
 
-function(junuo_need_Qt target)
+function(junuo_use_Qt target)
     if(NOT target)
         message(FATAL_ERROR "Missing 'TARGET' argument in junuo_need_Qt function.")
     endif()
+    find_package(Qt5 COMPONENTS REQUIRED ${ARGN})
     foreach(arg ${ARGN})
-        find_package(Qt5 COMPONENTS REQUIRED ${arg})
         target_link_libraries(${target} PRIVATE Qt5::${arg})
     endforeach(arg)
-endfunction(junuo_need_Qt)
+endfunction(junuo_use_Qt)
 
-function(junuo_target_sources_generate target)
+function(junuo_add_generate_sources target)
     target_sources(${target} PRIVATE ${GenerateFile})
     source_group("Generate Files" FILES ${GenerateFile})
-endfunction(junuo_target_sources_generate)
+endfunction(junuo_add_generate_sources)
 
 
-# 定义一个函数，用于生成automoc2_0_0.cpp文件
+# 定义一个宏，用于生成automoc2_0_0.cpp文件
 macro(junuo_auto_moc MOC_FILE)
     set(auto_moc_MOC_SOURCES)
     # 为每个头文件调用 MOC 并生成对应的源文件
@@ -51,6 +51,7 @@ macro(junuo_auto_moc MOC_FILE)
         # COMMAND ${CMAKE_COMMAND} -E remove ${auto_moc_MOC_SOURCES}
         DEPENDS ${auto_moc_MOC_SOURCES}
     )
+    set(auto_moc_MOC_SOURCES)
 endmacro(junuo_auto_moc)
 
 macro(junuo_auto_uic UIC_FILE)
