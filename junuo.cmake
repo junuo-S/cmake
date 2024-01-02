@@ -20,7 +20,7 @@ function(junuo_use_Qt target)
     endforeach(arg)
 endfunction(junuo_use_Qt)
 
-function(junuo_add_generate_sources target)
+function(junuo_add_generate_sources target GenerateFile)
     target_sources(${target} PRIVATE ${GenerateFile})
     source_group("Generate Files" FILES ${GenerateFile})
 endfunction(junuo_add_generate_sources)
