@@ -14,9 +14,9 @@ function(junuo_use_Qt target)
     if(NOT target)
         message(FATAL_ERROR "Missing 'TARGET' argument in junuo_need_Qt function.")
     endif()
-    find_package(Qt5 COMPONENTS REQUIRED ${ARGN})
+    find_package(Qt6 COMPONENTS REQUIRED ${ARGN})
     foreach(arg ${ARGN})
-        target_link_libraries(${target} PRIVATE Qt5::${arg})
+        target_link_libraries(${target} PRIVATE Qt6::${arg})
     endforeach(arg)
 endfunction(junuo_use_Qt)
 
@@ -37,7 +37,7 @@ macro(junuo_auto_moc MOC_FILE)
             set(moc_output "${CMAKE_CURRENT_BINARY_DIR}/moc/moc_${header_name}.cpp")
             add_custom_command(
                 OUTPUT ${moc_output}
-                COMMAND Qt5::moc ${CMAKE_CURRENT_SOURCE_DIR}/${header} -o ${moc_output}
+                COMMAND Qt6::moc ${CMAKE_CURRENT_SOURCE_DIR}/${header} -o ${moc_output}
                 DEPENDS ${header}
             )
             list(APPEND auto_moc_MOC_SOURCES ${moc_output})
@@ -67,7 +67,7 @@ macro(junuo_auto_uic UIC_FILE)
             # 执行uic命令来处理.ui文件并生成头文件
             add_custom_command(
                 OUTPUT ${output_header}
-                COMMAND Qt5::uic ${CMAKE_CURRENT_SOURCE_DIR}/${ui_file} -o ${output_header}
+                COMMAND Qt6::uic ${CMAKE_CURRENT_SOURCE_DIR}/${ui_file} -o ${output_header}
                 DEPENDS ${ui_file}
             )
         endif()
@@ -82,7 +82,7 @@ macro(junuo_auto_rcc RCC_FILE)
             set(rcc_output "${CMAKE_CURRENT_BINARY_DIR}/rcc/rcc_${header_name}.cpp")
             add_custom_command(
                 OUTPUT ${rcc_output}
-                COMMAND Qt5::rcc ${CMAKE_CURRENT_SOURCE_DIR}/${qrcfile} -o ${rcc_output}
+                COMMAND Qt6::rcc ${CMAKE_CURRENT_SOURCE_DIR}/${qrcfile} -o ${rcc_output}
                 DEPENDS ${qrcfile}
             )
             list(APPEND ${RCC_FILE} ${rcc_output})
