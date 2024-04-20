@@ -3,26 +3,20 @@
     source_group("${source_path}" FILES "${source}")
 endfunction(assign_source_group)
 
-function(junuo_add_executable)
+function(junuo_add_executable target_name)
     foreach(source ${ARGN})
         assign_source_group(${source})
     endforeach()
     add_executable(${ARGV})
 endfunction(junuo_add_executable)
 
-function(junuo_add_shared_library)
+function(junuo_add_library target_name)
     foreach(source ${ARGN})
         assign_source_group(${source})
     endforeach()
     add_library(${ARGV})
-endfunction(junuo_add_shared_library)
-
-function(junuo_add_static_library)
-    foreach(source ${ARGN})
-        assign_source_group(${source})
-    endforeach()
-    add_library(${ARGV})
-endfunction(junuo_add_static_library)
+    set_target_properties(${target_name} PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
+endfunction(junuo_add_library)
 
 function(junuo_use_Qt target)
     if(NOT target)
@@ -39,9 +33,7 @@ function(junuo_add_generate_sources target GenerateFile)
     source_group("Generate Files" FILES ${GenerateFile})
 endfunction(junuo_add_generate_sources)
 
-
-# 定义一个宏，用于生成automoc2_0_0.cpp文件
-macro(junuo_auto_moc MOC_FILE)
+function(junuo_auto_moc target_name)
     set(auto_moc_MOC_SOURCES)
     # 为每个头文件调用 MOC 并生成对应的源文件
     foreach(header ${ARGN})
@@ -58,17 +50,17 @@ macro(junuo_auto_moc MOC_FILE)
         endif()
     endforeach()
     # 将所有的MOC文件合并成一个文件
-    set(${MOC_FILE} ${CMAKE_CURRENT_BINARY_DIR}/moc/automoc2_0_0.cpp)
+    set(ret_file ${CMAKE_CURRENT_BINARY_DIR}/moc/automoc2_0_0.cpp)
     add_custom_command(
-        OUTPUT ${${MOC_FILE}}
-        COMMAND ${CMAKE_COMMAND} -E cat ${auto_moc_MOC_SOURCES} > ${${MOC_FILE}}
-        # COMMAND ${CMAKE_COMMAND} -E remove ${auto_moc_MOC_SOURCES}
+        OUTPUT ${ret_file}
+        COMMAND ${CMAKE_COMMAND} -E cat ${auto_moc_MOC_SOURCES} > ${ret_file}
         DEPENDS ${auto_moc_MOC_SOURCES}
     )
-    set(auto_moc_MOC_SOURCES)
-endmacro(junuo_auto_moc)
+    target_sources(${target_name} PRIVATE ${ret_file})
+    source_group("Generate Files" FILES ${ret_file})
+endfunction(junuo_auto_moc)
 
-macro(junuo_auto_uic UIC_FILE)
+function(junuo_auto_uic target_name)
     foreach(ui_file ${ARGN})
         get_filename_component(file_extension ${ui_file} EXT)
         if(${file_extension} STREQUAL ".ui")
@@ -84,11 +76,13 @@ macro(junuo_auto_uic UIC_FILE)
                 COMMAND Qt5::uic ${CMAKE_CURRENT_SOURCE_DIR}/${ui_file} -o ${output_header}
                 DEPENDS ${ui_file}
             )
+            target_sources(${target_name} PRIVATE ${output_header})
+            source_group("Generate Files" FILES ${output_header})
         endif()
     endforeach()
-endmacro(junuo_auto_uic)
+endfunction(junuo_auto_uic)
 
-macro(junuo_auto_rcc RCC_FILE)
+function(junuo_auto_rcc target_name)
     foreach(qrcfile ${ARGN})
         get_filename_component(file_extension ${qrcfile} EXT)
         if(${file_extension} STREQUAL ".qrc")
@@ -99,9 +93,36 @@ macro(junuo_auto_rcc RCC_FILE)
                 COMMAND Qt5::rcc ${CMAKE_CURRENT_SOURCE_DIR}/${qrcfile} -o ${rcc_output}
                 DEPENDS ${qrcfile}
             )
-            list(APPEND ${RCC_FILE} ${rcc_output})
+            target_sources(${target_name} PRIVATE ${rcc_output})
+            source_group("Generate Files" FILES ${rcc_output})
         endif()
     endforeach()
-endmacro(junuo_auto_rcc)
+endfunction(junuo_auto_rcc)
 
+function(junuo_include_directories target_name)
+    target_include_directories(${target_name} PRIVATE ${ARGN})
+endfunction(junuo_include_directories)
+
+function(junuo_link_libraries target_name)
+    target_link_libraries(${target_name} PRIVATE ${ARGN})
+endfunction(junuo_link_libraries)
+
+function(junuo_compile_definitions target_name)
+    target_compile_definitions(${target_name} PRIVATE ${ARGN})
+endfunction(junuo_compile_definitions)
+
+function(junuo_add_translation target_name)
+    find_package(Qt5 COMPONENTS LinguistTools REQUIRED)
+    foreach(ts_file ${ARGN})
+        get_filename_component(file_extension ${ts_file} EXT)
+        if(${file_extension} STREQUAL ".ts")
+            get_filename_component(header_name ${ts_file} NAME_WE)
+            add_custom_command(
+                TARGET ${target_name} POST_BUILD
+                COMMAND Qt5::lrelease ${CMAKE_CURRENT_SOURCE_DIR}/${ts_file} -qm ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mui/${header_name}.qm
+                DEPENDS ${ARGN}
+            )
+        endif()
+    endforeach()
+endfunction(junuo_add_translation)
 
