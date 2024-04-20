@@ -119,7 +119,8 @@ function(junuo_add_translation target_name)
             get_filename_component(header_name ${ts_file} NAME_WE)
             add_custom_command(
                 TARGET ${target_name} POST_BUILD
-                COMMAND Qt5::lrelease ${CMAKE_CURRENT_SOURCE_DIR}/${ts_file} -qm ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mui/${header_name}.qm
+                COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/translation
+                COMMAND Qt5::lrelease ${CMAKE_CURRENT_SOURCE_DIR}/${ts_file} -qm ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/translation/${header_name}.qm
                 DEPENDS ${ARGN}
             )
         endif()
