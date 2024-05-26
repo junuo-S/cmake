@@ -28,6 +28,17 @@ function(junuo_use_Qt target)
     endforeach(arg)
 endfunction(junuo_use_Qt)
 
+function(junuo_use_Python3 target)
+    if(NOT target)
+        message(FATAL_ERROR "Missing 'TARGET' argument in junuo_use_Python3 function.")
+    endif()
+    find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+    target_include_directories(${target} PRIVATE ${Python3_INCLUDE_DIRS})
+    target_link_libraries(${target} PRIVATE ${Python3_LIBRARY})
+    target_link_directories(${target} PRIVATE ${Python3_LIBRARY_DIRS})
+endfunction(junuo_use_Python3)
+
+
 function(junuo_add_generate_sources target GenerateFile)
     target_sources(${target} PRIVATE ${GenerateFile})
     source_group("Generate Files" FILES ${GenerateFile})
