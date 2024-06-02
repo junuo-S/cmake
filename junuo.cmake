@@ -38,6 +38,15 @@ function(junuo_use_Python3 target)
     target_link_directories(${target} PRIVATE ${Python3_LIBRARY_DIRS})
 endfunction(junuo_use_Python3)
 
+function(junuo_use_OpenSSL target)
+    if(NOT target)
+        message(FATAL_ERROR "Missing 'TARGET' argument in junuo_use_Python3 function.")
+    endif()
+    find_package(OpenSSL REQUIRED)
+    target_link_libraries(${target} PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+endfunction(junuo_use_OpenSSL)
+
+
 
 function(junuo_add_generate_sources target GenerateFile)
     target_sources(${target} PRIVATE ${GenerateFile})

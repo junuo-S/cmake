@@ -2,6 +2,11 @@
 list(APPEND CMAKE_LIBRARY_PATH "D:/GreenTools/Qt/5.15.12_installed/lib")
 list(APPEND CMAKE_PREFIX_PATH "D:/GreenTools/Qt/5.15.12_installed/lib")
 
+# 提供 OpenSSL 路径
+set(OPENSSL_ROOT_DIR "D:/GreenTools/openssl/openssl-3.3.0-installed")
+set(OPENSSL_INCLUDE_DIR "D:/GreenTools/openssl/openssl-3.3.0-installed/include")
+set(OPENSSL_LIBRARIES "D:/GreenTools/openssl/openssl-3.3.0-installed/lib")
+
 set(CMAKE_SYSTEM_VERSION 10.0.18362.0)
 set(CMAKE_CXX_STANDARD 14)
 
