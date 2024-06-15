@@ -22,9 +22,9 @@ function(junuo_use_Qt target)
     if(NOT target)
         message(FATAL_ERROR "Missing 'TARGET' argument in junuo_need_Qt function.")
     endif()
-    find_package(Qt5 COMPONENTS REQUIRED ${ARGN})
+    find_package(${Qt_version} COMPONENTS REQUIRED ${ARGN})
     foreach(arg ${ARGN})
-        target_link_libraries(${target} PRIVATE Qt5::${arg})
+        target_link_libraries(${target} PRIVATE ${Qt_version}::${arg})
     endforeach(arg)
 endfunction(junuo_use_Qt)
 
@@ -63,7 +63,7 @@ function(junuo_auto_moc target_name)
             set(moc_output "${CMAKE_CURRENT_BINARY_DIR}/moc/moc_${header_name}.cpp")
             add_custom_command(
                 OUTPUT ${moc_output}
-                COMMAND Qt5::moc ${CMAKE_CURRENT_SOURCE_DIR}/${header} -o ${moc_output}
+                COMMAND ${Qt_version}::moc ${CMAKE_CURRENT_SOURCE_DIR}/${header} -o ${moc_output}
                 DEPENDS ${header}
             )
             list(APPEND auto_moc_MOC_SOURCES ${moc_output})
@@ -93,7 +93,7 @@ function(junuo_auto_uic target_name)
             # 执行uic命令来处理.ui文件并生成头文件
             add_custom_command(
                 OUTPUT ${output_header}
-                COMMAND Qt5::uic ${CMAKE_CURRENT_SOURCE_DIR}/${ui_file} -o ${output_header}
+                COMMAND ${Qt_version}::uic ${CMAKE_CURRENT_SOURCE_DIR}/${ui_file} -o ${output_header}
                 DEPENDS ${ui_file}
             )
             target_sources(${target_name} PRIVATE ${output_header})
@@ -110,7 +110,7 @@ function(junuo_auto_rcc target_name)
             set(rcc_output "${CMAKE_CURRENT_BINARY_DIR}/rcc/rcc_${header_name}.cpp")
             add_custom_command(
                 OUTPUT ${rcc_output}
-                COMMAND Qt5::rcc ${CMAKE_CURRENT_SOURCE_DIR}/${qrcfile} -o ${rcc_output}
+                COMMAND ${Qt_version}::rcc ${CMAKE_CURRENT_SOURCE_DIR}/${qrcfile} -o ${rcc_output}
                 DEPENDS ${qrcfile}
             )
             target_sources(${target_name} PRIVATE ${rcc_output})
@@ -132,7 +132,7 @@ function(junuo_compile_definitions target_name)
 endfunction(junuo_compile_definitions)
 
 function(junuo_add_translation target_name)
-    find_package(Qt5 COMPONENTS LinguistTools REQUIRED)
+    find_package(${Qt_version} COMPONENTS LinguistTools REQUIRED)
     foreach(ts_file ${ARGN})
         get_filename_component(file_extension ${ts_file} EXT)
         if(${file_extension} STREQUAL ".ts")
@@ -140,7 +140,7 @@ function(junuo_add_translation target_name)
             add_custom_command(
                 TARGET ${target_name} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/translation
-                COMMAND Qt5::lrelease ${CMAKE_CURRENT_SOURCE_DIR}/${ts_file} -qm ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/translation/${header_name}.qm
+                COMMAND ${Qt_version}::lrelease ${CMAKE_CURRENT_SOURCE_DIR}/${ts_file} -qm ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/translation/${header_name}.qm
                 DEPENDS ${ARGN}
             )
         endif()
