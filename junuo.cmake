@@ -102,21 +102,19 @@ function(junuo_auto_uic target_name)
     endforeach()
 endfunction(junuo_auto_uic)
 
-function(junuo_auto_rcc target_name)
-    foreach(qrcfile ${ARGN})
-        get_filename_component(file_extension ${qrcfile} EXT)
-        if(${file_extension} STREQUAL ".qrc")
-            get_filename_component(header_name ${qrcfile} NAME_WE)
-            set(rcc_output "${CMAKE_CURRENT_BINARY_DIR}/rcc/rcc_${header_name}.cpp")
-            add_custom_command(
-                OUTPUT ${rcc_output}
-                COMMAND ${Qt_version}::rcc ${CMAKE_CURRENT_SOURCE_DIR}/${qrcfile} -o ${rcc_output}
-                DEPENDS ${qrcfile}
-            )
-            target_sources(${target_name} PRIVATE ${rcc_output})
-            source_group("Generate Files" FILES ${rcc_output})
-        endif()
-    endforeach()
+function(junuo_auto_rcc target_name qrcfile)
+    get_filename_component(file_extension ${qrcfile} EXT)
+    if(${file_extension} STREQUAL ".qrc")
+        get_filename_component(header_name ${qrcfile} NAME_WE)
+        set(rcc_output "${CMAKE_CURRENT_BINARY_DIR}/rcc/rcc_${header_name}.cpp")
+        add_custom_command(
+            OUTPUT ${rcc_output}
+            COMMAND ${Qt_version}::rcc ${CMAKE_CURRENT_SOURCE_DIR}/${qrcfile} -o ${rcc_output}
+            DEPENDS ${qrcfile} ${ARGN}
+        )
+        target_sources(${target_name} PRIVATE ${rcc_output})
+        source_group("Generate Files" FILES ${rcc_output})
+    endif()
 endfunction(junuo_auto_rcc)
 
 function(junuo_include_directories target_name)
