@@ -54,6 +54,14 @@ function(junuo_use_lz4 target)
     target_link_libraries(${target} PRIVATE lz4::lz4)
 endfunction(junuo_use_lz4)
 
+function(junuo_use_protobuf target)
+    if(NOT target)
+        message(FATAL_ERROR "Missing 'TARGET' argument in junuo_use_protobuf function.")
+    endif()
+    find_package(Protobuf CONFIG REQUIRED)
+    target_link_libraries(${target} PRIVATE protobuf::libprotoc protobuf::libprotobuf protobuf::libprotobuf-lite)
+endfunction(junuo_use_protobuf)
+
 function(junuo_add_generate_sources target GenerateFile)
     target_sources(${target} PRIVATE ${GenerateFile})
     source_group("Generate Files" FILES ${GenerateFile})
@@ -150,4 +158,39 @@ function(junuo_add_translation target_name)
         endif()
     endforeach()
 endfunction(junuo_add_translation)
+
+function(junuo_generate_protobuf_files target_name)
+    set(proto_gen_path ${CMAKE_CURRENT_BINARY_DIR}/gen-cpp)
+    file(MAKE_DIRECTORY ${proto_gen_path})
+    # 初始化输出列表
+    set(proto_headers)
+    set(proto_sources)
+
+    # 遍历传入的 proto 文件列表
+    foreach(proto_file ${ARGN})
+        # 获取 proto 文件名（不带扩展名）
+        get_filename_component(file_name_no_suffix ${proto_file} NAME_WE)
+        set(proto_header ${proto_gen_path}/${file_name_no_suffix}.pb.cc)
+        set(proto_source ${proto_gen_path}/${file_name_no_suffix}.pb.h)
+        # 提取路径部分
+        get_filename_component(part_path "${proto_file}" DIRECTORY)
+        # 提取文件名部分
+        get_filename_component(part_name "${proto_file}" NAME)
+
+        # 添加自定义命令生成 .cc 和 .h 文件，并指定依赖项
+        add_custom_command(
+            OUTPUT ${proto_header} ${proto_source}
+            COMMAND ${Protobuf_PROTOC_EXECUTABLE}
+            ARGS --cpp_out=${proto_gen_path} -I ${CMAKE_CURRENT_SOURCE_DIR}/${part_path} ${part_name}
+            DEPENDS ${proto_file}  # 依赖于 .proto 文件
+            COMMENT "Generating C++ source and header from ${proto_file}"
+        )
+
+        # 将生成的 .cc 和 .h 文件加入列表
+        list(APPEND proto_headers ${proto_header})
+        list(APPEND proto_sources ${proto_source})
+    endforeach()
+    target_sources(${target_name} PRIVATE ${proto_headers} ${proto_sources})
+    source_group("Generate Files" FILES ${proto_headers} ${proto_sources})
+endfunction(junuo_generate_protobuf_files)
 
