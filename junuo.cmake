@@ -202,6 +202,7 @@ function(junuo_deal_qrc_files)
     endif()
     set(output_dir ${CMAKE_CURRENT_BINARY_DIR}/rcc)
     foreach(qrc_file ${ARGN})
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${qrc_file}")
         execute_process(
             COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/cmake/script/junuo_cmake_help.py rcc --check ${qrc_file} --source-dir ${CMAKE_CURRENT_SOURCE_DIR}
             OUTPUT_VARIABLE check_result
