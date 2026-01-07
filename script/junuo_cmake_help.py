@@ -166,9 +166,6 @@ class JunuoRcc:
 if __name__ == "__main__":
     if len(sys.argv) <= 1:
         sys.exit(0)
-    with open('D:/1.txt', 'a') as file:
-        file.write(str(sys.argv))
-        file.write('\n')
     argMap = parseCommandLine(sys.argv[1:])
     match argMap[g_strClass]:
         case 'moc':
