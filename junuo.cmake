@@ -177,7 +177,7 @@ function(junuo_deal_moc_files)
     if (argn_count LESS 0 OR argn_count EQUAL 0)
         return()
     endif()
-    set(moc_file_base_name junuo_moc_01.cpp)
+    set(moc_file_base_name junuo_moc.cpp)
     set(generate_moc_file ${CMAKE_CURRENT_BINARY_DIR}/moc/${moc_file_base_name})
     set_source_files_properties(${generate_moc_file} PROPERTIES GENERATED TRUE)
     junuo_add_generate_sources(${generate_moc_file})
@@ -187,7 +187,8 @@ function(junuo_deal_moc_files)
     endif()
     get_filename_component(Qt_bin_dir ${qmake_executable} DIRECTORY)
     add_custom_command(
-        OUTPUT ${generate_moc_file}
+        TARGET ${junuo_current_package_name}
+        PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/moc
         COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/cmake/script/junuo_cmake_help.py moc --compile "${ARGN}" --source-dir ${CMAKE_CURRENT_SOURCE_DIR} --output-dir ${CMAKE_CURRENT_BINARY_DIR} --qt-bin-dir ${Qt_bin_dir} --output-file ${moc_file_base_name}
         COMMENT "parallel moc ing..."
@@ -230,13 +231,19 @@ function(junuo_add_translation)
     foreach(ts_file ${ARGN})
         get_filename_component(file_extension ${ts_file} EXT)
         if(${file_extension} STREQUAL ".ts")
-            get_filename_component(header_name ${ts_file} NAME_WE)
+            get_filename_component(base_name ${ts_file} NAME_WE)
+            set(qm_file ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/translation/${base_name}.qm)
+
             add_custom_command(
-                TARGET ${junuo_current_package_name} POST_BUILD
+                OUTPUT ${qm_file}
                 COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/translation
-                COMMAND Qt${QT_VERSION_MAJOR}::lrelease ${CMAKE_CURRENT_SOURCE_DIR}/${ts_file} -qm ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/translation/${header_name}.qm
+                COMMAND Qt${QT_VERSION_MAJOR}::lrelease ${CMAKE_CURRENT_SOURCE_DIR}/${ts_file} -qm ${qm_file}
                 DEPENDS ${ts_file}
             )
+
+            # 把 .qm 当作目标的生成文件挂上去，这样构建系统会按时间戳增量执行
+            set_source_files_properties(${qm_file} PROPERTIES GENERATED TRUE)
+            junuo_add_generate_sources(${qm_file})
         endif()
     endforeach()
 endfunction(junuo_add_translation)
