@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 import json
 import hashlib
+import logging
 
 g_strClass = 'class'
 g_strMethod = 'method'
@@ -59,13 +60,11 @@ class JunuoMoc:
             self.outputDir = toStandardPath(argMap[g_strOutputDir]).rstrip('/') + '/moc'
             self.outputFileName = self.outputDir + '/' + toStandardPath(argMap[g_strOutputFile])
             self.mocCacheFileName = self.outputDir + '/junuo_moc.cache'
-            if os.path.exists(self.mocCacheFileName):
-                with open(self.mocCacheFileName, 'r') as file:
-                    self.mocCache = json.load(file)
-            else:
-                self.mocCache = {}
             self.strMd5Key = 'md5'
             self.strMocFileKey = 'moc_file'
+            self.mocCache = {}
+            self.isNeedCombine = False
+            self.loadMocCache()
 
     def __del__(self):
         if self.method == self.compiltMethodName:
@@ -85,7 +84,6 @@ class JunuoMoc:
                 print(os.path.relpath(absoluteFileName, self.sourceDir))
 
     def compile(self):
-        isNeedCombine = False
         maxWorkerCount = os.cpu_count()
         if maxWorkerCount is None:
             maxWorkerCount = 1
@@ -93,7 +91,7 @@ class JunuoMoc:
             for absoluteFileName in self.content:
                 if not self.isNeedReMoc(absoluteFileName):
                     continue
-                isNeedCombine = True
+                self.isNeedCombine = True
                 if absoluteFileName in self.mocCache.keys():
                     mocFileName = self.mocCache[absoluteFileName][self.strMocFileKey]
                 else:
@@ -105,7 +103,8 @@ class JunuoMoc:
                         index += 1
                 self.mocCache[absoluteFileName] = {self.strMd5Key : calculateMd5(absoluteFileName), self.strMocFileKey : mocFileName}
                 executor.submit(self.moc, absoluteFileName, mocFileName)
-        if not isNeedCombine:
+        if not self.isNeedCombine:
+            logging.info('No moc files need to be combined.')
             return
         with open(self.outputFileName, 'w') as file:
             for mocFileName in list(Path(self.outputDir).rglob('*.moc')):
@@ -135,6 +134,29 @@ class JunuoMoc:
         if absoluteFileName not in self.mocCache.keys():
             return True
         return self.mocCache[absoluteFileName][self.strMd5Key] != calculateMd5(absoluteFileName)
+    
+    def loadMocCache(self):
+        logging.info(f'Loading moc cache from {self.mocCacheFileName}')
+        if not os.path.exists(self.mocCacheFileName):
+            logging.warning(f'Moc cache file does not exist: {self.mocCacheFileName}')
+            return
+        with open(self.mocCacheFileName, 'r') as file:
+            self.mocCache = json.load(file)
+        for key in list(self.mocCache.keys()):
+            if key not in self.content or not os.path.exists(key):
+                logging.info(f'Remove moc cache for deleted file: {key}')
+                moc_file = self.mocCache[key].get(self.strMocFileKey)
+                if moc_file:
+                    try:
+                        os.remove(moc_file)
+                    except FileNotFoundError:
+                        logging.info(f'Moc file already removed: {moc_file}')
+                    except PermissionError as e:
+                        logging.warning(f'No permission to remove moc file: {moc_file}. {e}')
+                    except OSError as e:
+                        logging.warning(f'Failed to remove moc file: {moc_file}. {e}')
+                self.mocCache.pop(key)
+                self.isNeedCombine = True
 
 class JunuoRcc:
     def __init__(self, argMap: dict):
@@ -167,6 +189,17 @@ if __name__ == "__main__":
     if len(sys.argv) <= 1:
         sys.exit(0)
     argMap = parseCommandLine(sys.argv[1:])
+
+    output_dir = argMap.get(g_strOutputDir) or os.getcwd()
+    log_dir = Path(output_dir).expanduser().resolve()
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / "cmake-python-helper.log"
+
+    logging.basicConfig(
+        filename=str(log_file),
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
     match argMap[g_strClass]:
         case 'moc':
             JunuoMoc(argMap).doWork()
